@@ -1,32 +1,32 @@
+import { useSelector, useDispatch } from "react-redux";
+import { removeItem } from "../store/savedSlice";
+import { Card, CardContent, Button, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-export default function SavedPage({ saved, dispatch }) {
+export default function SavedPage() {
+  const saved = useSelector((state) => state.saved.items);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   if (saved.length === 0) return <p>No saved items</p>;
 
   return (
-    <div>
-      <h2>Saved Items</h2>
-
+    <>
       {saved.map((item) => (
-        <div key={item.code}>
-          <h3>{item.product_name}</h3>
-          <p>{item.brands}</p>
+        <Card key={item.code} sx={{ margin: 2 }}>
+          <CardContent>
+            <Typography>{item.product_name}</Typography>
 
-          <button onClick={() => navigate(`/product/${item.code}`)}>
-            View
-          </button>
+            <Button onClick={() => navigate(`/product/${item.code}`)}>
+              View
+            </Button>
 
-          <button
-            onClick={() =>
-              dispatch({ type: "REMOVE", code: item.code })
-            }
-          >
-            Remove
-          </button>
-        </div>
+            <Button onClick={() => dispatch(removeItem(item.code))}>
+              Remove
+            </Button>
+          </CardContent>
+        </Card>
       ))}
-    </div>
+    </>
   );
 }

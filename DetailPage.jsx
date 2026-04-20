@@ -1,68 +1,64 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { addItem, removeItem } from "../store/savedSlice";
+import { Button, Typography, Paper } from "@mui/material";
+import NutritionRow from "../components/NutritionRow";
 
-export default function DetailPage({ saved, dispatch }) {
+export default function DetailPage() {
   const { barcode } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const saved = useSelector((state) => state.saved.items);
 
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const fetchProduct = async () => {
-      try {
-        const res = await axios.get(
-          `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
-        );
+    const fetchData = async () => {
+      const res = await axios.get(
+        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
+      );
 
-        if (!cancelled) {
-          setProduct(res.data.product);
-          setLoading(false);
-        }
-      } catch (err) {
-        setLoading(false);
+      if (!cancelled) {
+        setProduct(res.data.product);
       }
     };
 
-    fetchProduct();
+    fetchData();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => (cancelled = true);
   }, [barcode]);
 
-  if (loading) return <p>Loading...</p>;
-  if (!product) return <p>Error loading product</p>;
+  if (!product) return <p>Loading...</p>;
 
   const isSaved = saved.some((p) => p.code === barcode);
 
   return (
-    <div>
-      <button onClick={() => navigate(-1)}>Back</button>
+    <Paper sx={{ padding: 2 }}>
+      <Button onClick={() => navigate(-1)}>Back</Button>
 
-      <h2>{product.product_name}</h2>
+      <Typography variant="h5">{product.product_name}</Typography>
 
-      <p>Brand: {product.brands}</p>
+      <NutritionRow label="Calories" value={product.nutriments?.["energy-kcal_100g"]} />
+      <NutritionRow label="Protein" value={product.nutriments?.proteins_100g} />
+      <NutritionRow label="Carbs" value={product.nutriments?.carbohydrates_100g} />
+      <NutritionRow label="Fat" value={product.nutriments?.fat_100g} />
 
-      <p>Calories: {product.nutriments?.["energy-kcal_100g"]}</p>
-      <p>Protein: {product.nutriments?.proteins_100g}</p>
-      <p>Carbs: {product.nutriments?.carbohydrates_100g}</p>
-      <p>Fat: {product.nutriments?.fat_100g}</p>
-
-      <button
+      <Button
+        variant="contained"
         onClick={() =>
-          dispatch({
-            type: isSaved ? "REMOVE" : "ADD",
-            product,
-            code: barcode,
-          })
+          dispatch(
+            isSaved
+              ? removeItem(barcode)
+              : addItem(product)
+          )
         }
       >
         {isSaved ? "Remove" : "Save"}
-      </button>
-    </div>
+      </Button>
+    </Paper>
   );
 }
